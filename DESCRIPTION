@@ -1,0 +1,25 @@
+Package: DEdesign
+Type: Package
+Title: Statistical design for RNA-seq experiments aimed at identifying differentially expressed genes
+Version: 0.1.0
+Authors@R: c(person("Lina", "Gao", role = c("aut", "cre"),
+                     email = "gao@ohsu.edu"),
+              person("Byung", "Park", role = "aut"),
+              person("Dongseok", "Choi", role = "aut"))
+Description: Statistical design for RNA-seq experiments using Illumina platform, more specifically, 8-lane flow cell.
+    RNA-seq experiments aimed at identifying differentially expressed genes are multi-stage experiments and many nuisance 
+    technical factors may confound the effect of biological group if the experiment is not designed foloowing experimental 
+    design principles. The DEdesign package will perform statistical design for RNA-seq experiments and plot the design
+    in the format of 8-lane flow cell.
+License: GPL-2
+VignetteBuilder: knitr
+Imports: ggplot2,
+    dplyr,
+    RColorBrewer,
+    grDevices,
+    blocksdesign
+Suggests: knitr,
+    testthat
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
