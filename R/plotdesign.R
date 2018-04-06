@@ -14,8 +14,8 @@
 #'
 #' @examples
 #' des <- gen.design(trts=letters[1:6], reps=rep(3,6), nperlane=4)
-#' plot.design (des$Design$design)
-#' plot.design (des$suggestedDesign$design)
+#' plotdesign (des$Design$design)
+#' plotdesign (des$suggestedDesign$design)
 #'
 #' @import dplyr
 #' @import ggplot2
