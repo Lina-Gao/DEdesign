@@ -13,9 +13,9 @@
 #' @export
 #'
 #' @examples
-#' des <- gen.design(trts=letters[1:6], reps=rep(3,6), nperlane=4)
-#' plot.design (des$Design$design)
-#' plot.design (des$suggestedDesign$design)
+#' des <- gendesign(trts=letters[1:6], reps=rep(3,6), nperlane=4)
+#' plotdesign (des$Design$design)
+#' plotdesign (des$suggestedDesign$design)
 #'
 #' @import dplyr
 #' @import ggplot2
@@ -27,7 +27,7 @@
 #'
 
 
-plot.design <- function(designtable) {
+plotdesign <- function(designtable) {
   stopifnot(class(designtable) == "data.frame")
   inputs <- names(designtable)
   if (!("lane" %in% inputs)) {
