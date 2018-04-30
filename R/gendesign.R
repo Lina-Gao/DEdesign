@@ -3,14 +3,14 @@
 #' Generates block design to assign samples to sequencing lanes and adaptors on an Illumina flow cell
 #'
 #'
-#' @param trts a character vector for treatment groups
-#' @param reps an integer vector for number of replicates for each element of \code{trts}. Length of \code{reps} has to match length of \code{trts}.
+#' @param treatments a character vector for treatment groups. If the experiment consists of two or more factors, provide a character vector representing all possible combinations of levels across these factors.
+#' @param replicates an integer vector for number of replicates for each element of \code{treatments}. Length of \code{replicates} has to match length of \code{treatments}.
 #' @param nperlane An integer for number of samples per lane for sequencing. When \code{nperlane} is not provided, a number between 4-6 will be selected based on number of treatments to generate efficient design
 #' @param seed an integer initializing the random number generator. The default is \code{seed=1}
 #'
 #' @return \code{input} A list showing input parameters to the function
 #' @return \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
-#' @return \code{suggestedDesign} When \code{nperlane} is \code{NULL} or same as the value would be selected to give better efficiencey, \code{suggestedDesign} is the same as \code{Design}. Otherwise, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design. \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
+#' @return \code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
 #'
 #'
 #' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell
@@ -18,9 +18,9 @@
 #' @export
 #'
 #' @examples
-#' gendesign(trts=letters[1:4], reps=rep(4,4), nperlane=NULL)
-#' gendesign(trts=letters[1:4], reps=c(2,4,4,2), nperlane=3)
-#' gendesign(trts=letters[1:6], reps=rep(3,6), nperlane=4)
+#' gendesign(treatments=letters[1:4], replicates=rep(4,4), nperlane=NULL)
+#' gendesign(treatments=letters[1:4], replicates=c(2,4,4,2), nperlane=3)
+#' gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
 #'
 #' @import dplyr
 #' @importFrom blocksdesign blocks
@@ -30,14 +30,14 @@
 #'
 #'
 
-gendesign <- function(trts, reps, nperlane = NULL, seed = 1) {
-    if (class(trts) != "character") {
-        stop("trts needs to be a character vector for treatment groups")
+gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1) {
+    if (class(treatments) != "character") {
+        stop("treatments needs to be a character vector for treatment groups")
     }
 
-    if (!((class(reps) == "integer" & all(reps > 0)) | (class(reps) == "numeric" & all(reps >
-        0) & all(ceiling(reps) == floor(reps))))) {
-        stop("reps needs to be positive integers")
+    if (!((class(replicates) == "integer" & all(replicates > 0)) | (class(replicates) == "numeric" & all(replicates >
+        0) & all(ceiling(replicates) == floor(replicates))))) {
+        stop("replicates needs to be positive integers")
     }
 
     if (!is.null(nperlane)) {
@@ -47,40 +47,40 @@ gendesign <- function(trts, reps, nperlane = NULL, seed = 1) {
         }
     }
 
-    if (length(trts) != length(reps)) {
-        stop("trts and reps need to be the same length")
+    if (length(treatments) != length(replicates)) {
+        stop("treatments and replicates need to be the same length")
     }
 
 
-    out <- list(input = list(trts = trts, nperlane = nperlane, reps = reps, seed = seed), Design = list(),
+    out <- list(input = list(treatments = treatments, nperlane = nperlane, replicates = replicates, seed = seed), Design = list(),
         suggestedDesign = list())
-    ntrts <- length(trts)
+    ntreatments <- length(treatments)
 
     # suggested design, basically suggesting nperlane
-    if (ntrts <= 6) {
-        suggested.nperlane <- switch(ntrts, 4, 4, 3, 4, 5, 6)
+    if (ntreatments <= 6) {
+        suggested.nperlane <- switch(ntreatments, 4, 4, 3, 4, 5, 6)
     } else {
-        # ntrts>6
+        # ntreatments>6
         suggested.nperlane <- 4
-        if (ntrts%%5 == 0)
+        if (ntreatments%%5 == 0)
             suggested.nperlane <- 5
-        if (ntrts%%3 == 0 & ntrts%%4 != 0)
+        if (ntreatments%%3 == 0 & ntreatments%%4 != 0)
             suggested.nperlane <- 6
     }
 
-    if ((sum(reps)%%suggested.nperlane) != 0) {
+    if ((sum(replicates)%%suggested.nperlane) != 0) {
         # not filing a whole lane, add samples belong to ' ' to fill
-        reps <- c(reps, (sum(reps)%%suggested.nperlane))
-        trts <- c(trts, " ")
+        replicates <- c(replicates, (sum(replicates)%%suggested.nperlane))
+        treatments <- c(treatments, " ")
     }
 
-    suggested.des <- blocks(treatments = rep(1, length(reps)), replicates = reps, seed = seed,
-        rows = suggested.nperlane, columns = ceiling(sum(reps)/suggested.nperlane))
-    out$suggestedDesign$design <- suggested.des$Design %>% transmute(chip = 1, lane = gsub("Cols_",
-        "", Level_1.Cols) %>% as.integer, adp = gsub("Rows_", "", Level_1.Rows) %>% as.integer,
-        trt = trts[Treatments])
+    suggested.des <- blocks(treatments = rep(1, length(replicates)), replicates = replicates, seed = seed,
+        rows = suggested.nperlane, columns = ceiling(sum(replicates)/suggested.nperlane))
+    out$suggestedDesign$design <- suggested.des$Design %>% transmute(flowcell = 1, lane = gsub("Cols_",
+        "", Level_1.Cols) %>% as.integer, adaptor = gsub("Rows_", "", Level_1.Rows) %>% as.integer,
+        treatment = treatments[Treatments]) %>% arrange(flowcell,lane,treatment,adaptor)
 
-    #this is for one chip design, need to modify for multiple chips
+    #this is for one flowcell design, need to modify for multiple flowcells
     out$suggestedDesign$BlocksEfficiency <- suggested.des$BlocksEfficiency[1:2,3:4]
     names( out$suggestedDesign$BlocksEfficiency) <- c("numBlocks","Efficiency")
     row.names( out$suggestedDesign$BlocksEfficiency) <- c("Adaptors","Lanes")
@@ -88,16 +88,16 @@ gendesign <- function(trts, reps, nperlane = NULL, seed = 1) {
 
     if (!is.null(nperlane)) {
 
-        if ((sum(reps)%%nperlane) != 0) {
+        if ((sum(replicates)%%nperlane) != 0) {
             # not filing a whole lane, add samples belong to ' ' to fill
-            reps <- c(reps, (sum(reps)%%nperlane))
-            trts <- c(trts, " ")
+            replicates <- c(replicates, (sum(replicates)%%nperlane))
+            treatments <- c(treatments, " ")
         }
-        des <- blocks(treatments = rep(1, length(reps)), replicates = reps, seed = seed, rows = nperlane,
-            columns = ceiling(sum(reps)/nperlane))
-        out$Design$design <- des$Design %>% transmute(chip = 1, lane = gsub("Cols_", "",
-            Level_1.Cols) %>% as.integer, adp = gsub("Rows_", "", Level_1.Rows) %>% as.integer,
-            trt = trts[Treatments])
+        des <- blocks(treatments = rep(1, length(replicates)), replicates = replicates, seed = seed, rows = nperlane,
+            columns = ceiling(sum(replicates)/nperlane))
+        out$Design$design <- des$Design %>% transmute(flowcell = 1, lane = gsub("Cols_", "",
+            Level_1.Cols) %>% as.integer, adaptor = gsub("Rows_", "", Level_1.Rows) %>% as.integer,
+            treatment = treatments[Treatments]) %>% arrange(flowcell,lane,treatment,adaptor)
         out$Design$BlocksEfficiency <- des$BlocksEfficiency[1:2,3:4]
         names(out$Design$BlocksEfficiency) <- c("numBlocks","Efficiency")
         row.names(out$Design$BlocksEfficiency) <- c("Adaptors","Lanes")

@@ -15,6 +15,7 @@ License: GPL-2
 VignetteBuilder: knitr
 Imports: ggplot2,
     dplyr,
+    magrittr,
     RColorBrewer,
     grDevices,
     blocksdesign

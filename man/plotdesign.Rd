@@ -7,7 +7,7 @@
 plotdesign(designtable)
 }
 \arguments{
-\item{designtable}{a data frame for lane and adaptor assignment. Use output from \code{gen.design}.It should have 4 columns with column names \code{chip, lane, adp, trt}.}
+\item{designtable}{a data frame for lane and adaptor assignment. Use output from \code{gen.design}.It should have 4 columns with column names \code{flowcell, lane, adaptor, treatment}.}
 }
 \value{
 None
@@ -16,7 +16,7 @@ None
 Plot the RNA-seq experimental design in the format of Illumina 8-lane flow cell
 }
 \examples{
-des <- gendesign(trts=letters[1:6], reps=rep(3,6), nperlane=4)
+des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
 plotdesign (des$Design$design)
 plotdesign (des$suggestedDesign$design)
 

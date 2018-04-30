@@ -4,12 +4,12 @@
 \alias{gendesign}
 \title{Statistical design for RNA-seq experiments aimed at identifying differentially expressed genes}
 \usage{
-gendesign(trts, reps, nperlane = NULL, seed = 1)
+gendesign(treatments, replicates, nperlane = NULL, seed = 1)
 }
 \arguments{
-\item{trts}{a character vector for treatment groups}
+\item{treatments}{a character vector for treatment groups. If the experiment consists of two or more factors, provide a character vector representing all possible combinations of levels across these factors.}
 
-\item{reps}{an integer vector for number of replicates for each element of \code{trts}. Length of \code{reps} has to match length of \code{trts}.}
+\item{replicates}{an integer vector for number of replicates for each element of \code{treatments}. Length of \code{replicates} has to match length of \code{treatments}.}
 
 \item{nperlane}{An integer for number of samples per lane for sequencing. When \code{nperlane} is not provided, a number between 4-6 will be selected based on number of treatments to generate efficient design}
 
@@ -20,15 +20,15 @@ gendesign(trts, reps, nperlane = NULL, seed = 1)
 
 \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
 
-\code{suggestedDesign} When \code{nperlane} is \code{NULL} or same as the value would be selected to give better efficiencey, \code{suggestedDesign} is the same as \code{Design}. Otherwise, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design. \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
+\code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
 }
 \description{
 Generates block design to assign samples to sequencing lanes and adaptors on an Illumina flow cell
 }
 \examples{
-gendesign(trts=letters[1:4], reps=rep(4,4), nperlane=NULL)
-gendesign(trts=letters[1:4], reps=c(2,4,4,2), nperlane=3)
-gendesign(trts=letters[1:6], reps=rep(3,6), nperlane=4)
+gendesign(treatments=letters[1:4], replicates=rep(4,4), nperlane=NULL)
+gendesign(treatments=letters[1:4], replicates=c(2,4,4,2), nperlane=3)
+gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
 
 }
 \keyword{Illumina}
