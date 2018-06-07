@@ -4,7 +4,8 @@
 \alias{gendesign}
 \title{Statistical design for RNA-seq experiments aimed at identifying differentially expressed genes}
 \usage{
-gendesign(treatments, replicates, nperlane = NULL, seed = 1)
+gendesign(treatments, replicates, nperlane = NULL, seed = 1,
+  searches = NULL)
 }
 \arguments{
 \item{treatments}{a character vector for treatment groups. If the experiment consists of two or more factors, provide a character vector representing all possible combinations of levels across these factors.}
@@ -13,7 +14,9 @@ gendesign(treatments, replicates, nperlane = NULL, seed = 1)
 
 \item{nperlane}{An integer for number of samples per lane for sequencing. When \code{nperlane} is not provided, a number between 4-6 will be selected based on number of treatments to generate efficient design}
 
-\item{seed}{an integer initializing the random number generator. The default is \code{seed=1}}
+\item{seed}{an integer initializing the random number generator. The default is \code{seed=1}. Designs can be rebuilt repeatedly using different seed to check that a near-optimum design has been found.}
+
+\item{searches}{the maximum number of local optima searched at each stage of a treatment and block design optimization. The default depends on the design size. For optimum results, try large number of searches.}
 }
 \value{
 \code{input} A list showing input parameters to the function
@@ -23,7 +26,7 @@ gendesign(treatments, replicates, nperlane = NULL, seed = 1)
 \code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
 }
 \description{
-Generates block design to assign samples to sequencing lanes and adaptors on an Illumina flow cell
+Generates block design to assign samples to sequencing lanes and adaptors for Illumina flow cell
 }
 \examples{
 gendesign(treatments=letters[1:4], replicates=rep(4,4), nperlane=NULL)

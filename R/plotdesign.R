@@ -64,14 +64,14 @@ plotdesign <- function(designtable) {
     }
   }
 
-  p <- ggplot(designtable, aes(xmin = lane - 0.5, xmax = lane + 0.5, ymin = adaptor, ymax = adaptor + 1)) +
+  p <- ggplot(designtable, aes_(xmin = ~lane - 0.5, xmax = ~lane + 0.5, ymin = ~adaptor, ymax = ~adaptor + 1)) +
     xlim(-0.5, 8.5) + ylim(0, nadaptor + 2) +
-    geom_rect(aes(fill = treatment), colour = "grey50") +
+    geom_rect(aes_(fill = ~treatment), colour = "grey50") +
     scale_fill_manual(values = colors) +
-    geom_text(aes(x = lane, y = adaptor + 0.5, label = treatment), show.legend = FALSE) +
+    geom_text(aes_(x = ~lane, y = ~adaptor + 0.5, label = ~treatment), show.legend = FALSE) +
     geom_text(data = lanelabel,
-              aes(x = lane, y = adaptor, label = label)) +
-    geom_text(data = adaptorlabel, aes(x = lane, y = adaptor, label = label)) +
+              aes_(x = ~lane, y = ~adaptor, label = ~label)) +
+    geom_text(data = adaptorlabel, aes_(x = ~lane, y = ~adaptor, label = ~label)) +
     theme_bw() +
     theme(panel.border = element_blank(), panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), legend.position = "none",
