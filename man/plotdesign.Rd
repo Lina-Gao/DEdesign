@@ -4,20 +4,23 @@
 \alias{plotdesign}
 \title{Field map of RNA-seq experimental design}
 \usage{
-plotdesign(designtable)
+plotdesign(x, selection)
 }
 \arguments{
-\item{designtable}{a data frame for lane and adaptor assignment. Use output from \code{gen.design}.It should have 4 columns with column names \code{flowcell, lane, adaptor, treatment}.}
+\item{x}{a \code{DEdesign} object (output from \code{gendesign}) or a \code{data.frame} containing flowcell, lane and adaptor assignment can also be plotted. It should have 4 columns with column names \code{flowcell, lane, adaptor, treatment}. \code{flowcell, lane, adaptor} should be integer values starting from \code{1}; character values are expected for \code{treatment}.}
+
+\item{selection}{If \code{x} is a \code{DEdesign} object, select which design to plot: \code{Design} based on input or \code{suggestedDesign}. Default is \code{Design}.}
 }
 \value{
-None
+a \code{ggplot2} object
 }
 \description{
 Plot the RNA-seq experimental design in the format of Illumina 8-lane flow cell
 }
 \examples{
 des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
-plotdesign (des$Design$design)
+plotdesign (des,selection="Design")
+plotdesign (des,selection="suggestedDesign")
 plotdesign (des$suggestedDesign$design)
 
 }

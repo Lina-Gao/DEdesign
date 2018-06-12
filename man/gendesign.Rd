@@ -19,6 +19,8 @@ gendesign(treatments, replicates, nperlane = NULL, seed = 1,
 \item{searches}{the maximum number of local optima searched at each stage of a treatment and block design optimization. The default depends on the design size. For optimum results, try large number of searches.}
 }
 \value{
+\code{gendesign} returns an object of class "DEdesign", which is a list containing the following components:
+
 \code{input} A list showing input parameters to the function
 
 \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
