@@ -12,7 +12,7 @@ efficiency(x, selection)
 \item{selection}{choose which design to output: "\code{Design}" based on input or "\code{suggestedDesign}". Default is "\code{Design}".}
 }
 \value{
-a data frame giving D-efficiencies of flowcell (If there are more than one flowcell), lane and adaptor blocks
+a data frame giving D-efficiencies of flowcell (If there are more than one flowcell), lane and adapter blocks
 }
 \description{
 Extracts D-efficiency from a \code{DEdesign} object

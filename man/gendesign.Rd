@@ -23,12 +23,12 @@ gendesign(treatments, replicates, nperlane = NULL, seed = 1,
 
 \code{input} A list showing input parameters to the function
 
-\code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
+\code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
 
-\code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
+\code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
 }
 \description{
-Generates block design to assign samples to sequencing lanes and adaptors for Illumina flow cell
+Generates block design to assign samples to sequencing lanes and adapters for Illumina flow cell
 }
 \examples{
 gendesign(treatments=letters[1:4], replicates=rep(4,4), nperlane=NULL)

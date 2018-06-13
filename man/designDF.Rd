@@ -12,7 +12,7 @@ designDF(x, selection)
 \item{selection}{choose which design to output: \code{Design} based on input or \code{suggestedDesign}. Default is \code{Design}.}
 }
 \value{
-a data frame giving flowcell, lane and adaptor assignment for each experimental unit
+a data frame giving flowcell, lane and adapter assignment for each experimental unit
 }
 \description{
 Extracts desgins from a \code{DEdesign} object

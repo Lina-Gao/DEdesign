@@ -1,6 +1,6 @@
 #' Statistical design for RNA-seq experiments aimed at identifying differentially expressed genes
 #'
-#' Generates block design to assign samples to sequencing lanes and adaptors for Illumina flow cell
+#' Generates block design to assign samples to sequencing lanes and adapters for Illumina flow cell
 #'
 #'
 #' @param treatments a character vector for treatment groups. If the experiment consists of two or more factors, provide a character vector representing all possible combinations of levels across these factors.
@@ -12,8 +12,8 @@
 #' @return \code{gendesign} returns an object of class "\code{DEdesign}", which is a list containing the following components:
 #'
 #' @return \code{input} A list showing input parameters to the function
-#' @return \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
-#' @return \code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adaptor assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adaptor.
+#' @return \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
+#' @return \code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
 #'
 #'
 #' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell
@@ -82,14 +82,14 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
     suggested.numlane <- ceiling(sum(replicates)/suggested.nperlane)
     trtforeachsample = as.factor(mapply(rep,treatments,replicates) %>% unlist)
     lane = factor(1:suggested.numlane)
-    adaptor = factor(1:suggested.nperlane)
-    blocks = expand.grid(lane,adaptor)
-    names(blocks)=c("lane","adaptor")
+    adapter = factor(1:suggested.nperlane)
+    blocks = expand.grid(lane,adapter)
+    names(blocks)=c("lane","adapter")
 
     if (nrow(blocks)>sum(replicates)) {
       ntoremove = nrow(blocks) - sum(replicates)
-      blocks=blocks[!((blocks$lane==suggested.numlane) & (blocks$adaptor %in% ((suggested.nperlane-ntoremove+1):suggested.nperlane))), ]
-      # blocks=blocks %>% dplyr::filter_(!("lane"==suggested.numlane & "adaptor" %in% ((suggested.nperlane-ntoremove+1):suggested.nperlane))) #not working
+      blocks=blocks[!((blocks$lane==suggested.numlane) & (blocks$adapter %in% ((suggested.nperlane-ntoremove+1):suggested.nperlane))), ]
+      # blocks=blocks %>% dplyr::filter_(!("lane"==suggested.numlane & "adapter" %in% ((suggested.nperlane-ntoremove+1):suggested.nperlane))) #not working
     }
 
 
@@ -100,14 +100,14 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
       names(out$suggestedDesign$design)[names(out$suggestedDesign$design)=="TF"]="treatment"
       out$suggestedDesign$design$flowcell = 1
       out$suggestedDesign$design$lane = as.numeric(out$suggestedDesign$design$lane)
-      out$suggestedDesign$design$adaptor = as.numeric(out$suggestedDesign$design$adaptor)
+      out$suggestedDesign$design$adapter = as.numeric(out$suggestedDesign$design$adapter)
       out$suggestedDesign$design = out$suggestedDesign$design %>%
-        select_("flowcell","lane","adaptor","treatment") %>%
-        arrange_("flowcell","lane","adaptor","treatment")
+        select_("flowcell","lane","adapter","treatment") %>%
+        arrange_("flowcell","lane","adapter","treatment")
 
       out$suggestedDesign$BlocksEfficiency <- suggested.des$blocks_model[,c(1,3)]
       names( out$suggestedDesign$BlocksEfficiency) <- c("Blocks","D-efficiency")
-      out$suggestedDesign$BlocksEfficiency$Blocks <- c("lane","adaptor")
+      out$suggestedDesign$BlocksEfficiency$Blocks <- c("lane","adapter")
     } else {
       blocks$flowcell= as.factor(ifelse(as.numeric(blocks$lane) %% 8!=0,as.numeric(blocks$lane) %/%8 +1,as.numeric(blocks$lane) %/%8))
       suggested.des=design(trtforeachsample,blocks,searches=searches,weighting=0, seed=seed)
@@ -115,15 +115,15 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
       out$suggestedDesign$design <- suggested.des$design
       names(out$suggestedDesign$design)[names(out$suggestedDesign$design)=="TF"]="treatment"
       out$suggestedDesign$design$lane=ifelse(as.numeric(out$suggestedDesign$design$lane) %% 8!=0,as.numeric(out$suggestedDesign$design$lane) %% 8,8)
-      out$suggestedDesign$design$adaptor=as.numeric(out$suggestedDesign$design$adaptor)
+      out$suggestedDesign$design$adapter=as.numeric(out$suggestedDesign$design$adapter)
       out$suggestedDesign$design$flowcell=paste0("flowcell",as.numeric(out$suggestedDesign$design$flowcell))
       out$suggestedDesign$design = out$suggestedDesign$design %>%
-        select_("flowcell","lane","adaptor","treatment") %>%
-        arrange_("flowcell","lane","adaptor","treatment")
+        select_("flowcell","lane","adapter","treatment") %>%
+        arrange_("flowcell","lane","adapter","treatment")
 
       out$suggestedDesign$BlocksEfficiency <- suggested.des$blocks_model[,c(1,3)]
       names( out$suggestedDesign$BlocksEfficiency) <- c("Blocks","D-efficiency")
-      out$suggestedDesign$BlocksEfficiency$Blocks <- c("flowcell","lane","adaptor")
+      out$suggestedDesign$BlocksEfficiency$Blocks <- c("flowcell","lane","adapter")
 
     }
 
@@ -138,14 +138,14 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
       numlane <- ceiling(sum(replicates)/nperlane)
       trtforeachsample = as.factor(mapply(rep,treatments,replicates) %>% unlist)
       lane = factor(1:numlane)
-      adaptor = factor(1:nperlane)
-      blocks = expand.grid(lane,adaptor)
-      names(blocks)=c("lane","adaptor")
+      adapter = factor(1:nperlane)
+      blocks = expand.grid(lane,adapter)
+      names(blocks)=c("lane","adapter")
 
       if (nrow(blocks)>sum(replicates)) {
         ntoremove = nrow(blocks) - sum(replicates)
-        blocks=blocks[!((blocks$lane==numlane) & (blocks$adaptor %in% ((nperlane-ntoremove+1):nperlane))), ]
-        # blocks=blocks %>% dplyr::filter_(!("lane"==numlane & "adaptor" %in% ((nperlane-ntoremove+1):nperlane)))
+        blocks=blocks[!((blocks$lane==numlane) & (blocks$adapter %in% ((nperlane-ntoremove+1):nperlane))), ]
+        # blocks=blocks %>% dplyr::filter_(!("lane"==numlane & "adapter" %in% ((nperlane-ntoremove+1):nperlane)))
       }
 
 
@@ -156,14 +156,14 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
         names(out$Design$design)[names(out$Design$design)=="TF"]="treatment"
         out$Design$design$flowcell = 1
         out$Design$design$lane = as.numeric(out$Design$design$lane)
-        out$Design$design$adaptor = as.numeric(out$Design$design$adaptor)
+        out$Design$design$adapter = as.numeric(out$Design$design$adapter)
         out$Design$design = out$Design$design %>%
-          select_("flowcell","lane","adaptor","treatment") %>%
-          arrange_("flowcell","lane","adaptor","treatment")
+          select_("flowcell","lane","adapter","treatment") %>%
+          arrange_("flowcell","lane","adapter","treatment")
 
         out$Design$BlocksEfficiency <- des$blocks_model[,c(1,3)]
         names( out$Design$BlocksEfficiency) <- c("Blocks","D-efficiency")
-        out$Design$BlocksEfficiency$Blocks <- c("lane","adaptor")
+        out$Design$BlocksEfficiency$Blocks <- c("lane","adapter")
       } else {
         blocks$flowcell= as.factor(ifelse(as.numeric(blocks$lane) %% 8!=0,as.numeric(blocks$lane) %/%8 +1,as.numeric(blocks$lane) %/%8))
         des=design(trtforeachsample,blocks,searches=searches,weighting=0, seed=seed)
@@ -171,15 +171,15 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
         out$Design$design <- des$design
         names(out$Design$design)[names(out$Design$design)=="TF"]="treatment"
         out$Design$design$lane=ifelse(as.numeric(out$Design$design$lane) %% 8!=0,as.numeric(out$Design$design$lane) %% 8,8)
-        out$Design$design$adaptor=as.numeric(out$Design$design$adaptor)
+        out$Design$design$adapter=as.numeric(out$Design$design$adapter)
         out$Design$design$flowcell=paste0("flowcell",as.numeric(out$Design$design$flowcell))
         out$Design$design = out$Design$design %>%
-          select_("flowcell","lane","adaptor","treatment") %>%
-          arrange_("flowcell","lane","adaptor","treatment")
+          select_("flowcell","lane","adapter","treatment") %>%
+          arrange_("flowcell","lane","adapter","treatment")
 
         out$Design$BlocksEfficiency <- des$blocks_model[,c(1,3)]
         names( out$Design$BlocksEfficiency) <- c("Blocks","D-efficiency")
-        out$Design$BlocksEfficiency$Blocks <- c("flowcell","lane","adaptor")
+        out$Design$BlocksEfficiency$Blocks <- c("flowcell","lane","adapter")
 
       }
 
@@ -198,7 +198,7 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
 #' @param x a \code{DEdesign} object (output from \code{gendesign}).
 #' @param selection choose which design to output: \code{Design} based on input or \code{suggestedDesign}. Default is \code{Design}.
 #'
-#' @return a data frame giving flowcell, lane and adaptor assignment for each experimental unit
+#' @return a data frame giving flowcell, lane and adapter assignment for each experimental unit
 #'
 #'
 #' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell
@@ -232,7 +232,7 @@ designDF.DEdesign <- function(x, selection="Design") {
 #' @param x a \code{DEdesign} object (output from \code{gendesign}).
 #' @param selection choose which design to output: "\code{Design}" based on input or "\code{suggestedDesign}". Default is "\code{Design}".
 #'
-#' @return a data frame giving D-efficiencies of flowcell (If there are more than one flowcell), lane and adaptor blocks
+#' @return a data frame giving D-efficiencies of flowcell (If there are more than one flowcell), lane and adapter blocks
 #'
 #'
 #' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell

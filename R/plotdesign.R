@@ -2,7 +2,7 @@
 #'
 #' Plot the RNA-seq experimental design in the format of Illumina 8-lane flow cell
 #'
-#' @param x a \code{DEdesign} object (output from \code{gendesign}) or a \code{data.frame} containing flowcell, lane and adaptor assignment can also be plotted. It should have 4 columns with column names \code{flowcell, lane, adaptor, treatment}. \code{flowcell, lane, adaptor} should be integer values starting from \code{1}; character values are expected for \code{treatment}.
+#' @param x a \code{DEdesign} object (output from \code{gendesign}) or a \code{data.frame} containing flowcell, lane and adapter assignment can also be plotted. It should have 4 columns with column names \code{flowcell, lane, adapter, treatment}. \code{flowcell, lane, adapter} should be integer values starting from \code{1}; character values are expected for \code{treatment}.
 #' @param selection If \code{x} is a \code{DEdesign} object, select which design to plot: "\code{Design}" based on input or "\code{suggestedDesign}". Default is "\code{Design}".
 #'
 #' @return a \code{ggplot2} object
@@ -39,10 +39,10 @@ plotdesign.DEdesign <- function(x, selection="Design") {
   if (selection=="Design") {designtable=DEdesignobj$Design$design
   } else {designtable=DEdesignobj$suggestedDesign$design}
 
-  nadaptor <- max(designtable$adaptor)
-  lanelabel <- data.frame(lane = 1:8, adaptor = nadaptor + 1.2, label = paste0("lane", 1:8))
-  adaptorlabel <- data.frame(lane = rep(0, nadaptor), adaptor = (1:nadaptor) + 0.5,
-                         label = paste0("adaptor", 1:nadaptor))
+  nadapter <- max(designtable$adapter)
+  lanelabel <- data.frame(lane = 1:8, adapter = nadapter + 1.2, label = paste0("lane", 1:8))
+  adapterlabel <- data.frame(lane = rep(0, nadapter), adapter = (1:nadapter) + 0.5,
+                         label = paste0("adapter", 1:nadapter))
 
   ntreatment <- unique(designtable$treatment) %>% length
 
@@ -60,14 +60,14 @@ plotdesign.DEdesign <- function(x, selection="Design") {
     }
   }
 
-  p <- ggplot(designtable, aes_(xmin = ~lane - 0.5, xmax = ~lane + 0.5, ymin = ~adaptor, ymax = ~adaptor + 1)) +
-    xlim(-0.5, 8.5) + ylim(0, nadaptor + 2) +
+  p <- ggplot(designtable, aes_(xmin = ~lane - 0.5, xmax = ~lane + 0.5, ymin = ~adapter, ymax = ~adapter + 1)) +
+    xlim(-0.5, 8.5) + ylim(0, nadapter + 2) +
     geom_rect(aes_(fill = ~treatment), colour = "grey50") +
     scale_fill_manual(values = colors) +
-    geom_text(aes_(x = ~lane, y = ~adaptor + 0.5, label = ~treatment), show.legend = FALSE) +
+    geom_text(aes_(x = ~lane, y = ~adapter + 0.5, label = ~treatment), show.legend = FALSE) +
     geom_text(data = lanelabel,
-              aes_(x = ~lane, y = ~adaptor, label = ~label)) +
-    geom_text(data = adaptorlabel, aes_(x = ~lane, y = ~adaptor, label = ~label)) +
+              aes_(x = ~lane, y = ~adapter, label = ~label)) +
+    geom_text(data = adapterlabel, aes_(x = ~lane, y = ~adapter, label = ~label)) +
     theme_bw() +
     theme(panel.border = element_blank(), panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), legend.position = "none",
@@ -92,17 +92,17 @@ plotdesign.data.frame <- function(x, selection=NULL) {
   if (sum(designtable$lane %in% 1:8) != length(designtable$lane)) {
     stop("lane needs to be 1 to 8")
   }
-  if (!("adaptor" %in% inputs)) {
-    stop("need adaptor assignment in design")
+  if (!("adapter" %in% inputs)) {
+    stop("need adapter assignment in design")
   }
   if (!("flowcell" %in% inputs)) {
     stop("need flowcell assignment in design")
   }
 
-  nadaptor <- max(designtable$adaptor)
-  lanelabel <- data.frame(lane = 1:8, adaptor = nadaptor + 1.2, label = paste0("lane", 1:8))
-  adaptorlabel <- data.frame(lane = rep(0, nadaptor), adaptor = (1:nadaptor) + 0.5,
-                             label = paste0("adaptor", 1:nadaptor))
+  nadapter <- max(designtable$adapter)
+  lanelabel <- data.frame(lane = 1:8, adapter = nadapter + 1.2, label = paste0("lane", 1:8))
+  adapterlabel <- data.frame(lane = rep(0, nadapter), adapter = (1:nadapter) + 0.5,
+                             label = paste0("adapter", 1:nadapter))
 
   ntreatment <- unique(designtable$treatment) %>% length
 
@@ -120,14 +120,14 @@ plotdesign.data.frame <- function(x, selection=NULL) {
     }
   }
 
-  p <- ggplot(designtable, aes_(xmin = ~lane - 0.5, xmax = ~lane + 0.5, ymin = ~adaptor, ymax = ~adaptor + 1)) +
-    xlim(-0.5, 8.5) + ylim(0, nadaptor + 2) +
+  p <- ggplot(designtable, aes_(xmin = ~lane - 0.5, xmax = ~lane + 0.5, ymin = ~adapter, ymax = ~adapter + 1)) +
+    xlim(-0.5, 8.5) + ylim(0, nadapter + 2) +
     geom_rect(aes_(fill = ~treatment), colour = "grey50") +
     scale_fill_manual(values = colors) +
-    geom_text(aes_(x = ~lane, y = ~adaptor + 0.5, label = ~treatment), show.legend = FALSE) +
+    geom_text(aes_(x = ~lane, y = ~adapter + 0.5, label = ~treatment), show.legend = FALSE) +
     geom_text(data = lanelabel,
-              aes_(x = ~lane, y = ~adaptor, label = ~label)) +
-    geom_text(data = adaptorlabel, aes_(x = ~lane, y = ~adaptor, label = ~label)) +
+              aes_(x = ~lane, y = ~adapter, label = ~label)) +
+    geom_text(data = adapterlabel, aes_(x = ~lane, y = ~adapter, label = ~label)) +
     theme_bw() +
     theme(panel.border = element_blank(), panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(),
           panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), legend.position = "none",
