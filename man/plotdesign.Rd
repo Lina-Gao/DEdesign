@@ -9,7 +9,7 @@ plotdesign(x, selection)
 \arguments{
 \item{x}{a \code{DEdesign} object (output from \code{gendesign}) or a \code{data.frame} containing flowcell, lane and adaptor assignment can also be plotted. It should have 4 columns with column names \code{flowcell, lane, adaptor, treatment}. \code{flowcell, lane, adaptor} should be integer values starting from \code{1}; character values are expected for \code{treatment}.}
 
-\item{selection}{If \code{x} is a \code{DEdesign} object, select which design to plot: \code{Design} based on input or \code{suggestedDesign}. Default is \code{Design}.}
+\item{selection}{If \code{x} is a \code{DEdesign} object, select which design to plot: "\code{Design}" based on input or "\code{suggestedDesign}". Default is "\code{Design}".}
 }
 \value{
 a \code{ggplot2} object

@@ -3,7 +3,7 @@
 #' Plot the RNA-seq experimental design in the format of Illumina 8-lane flow cell
 #'
 #' @param x a \code{DEdesign} object (output from \code{gendesign}) or a \code{data.frame} containing flowcell, lane and adaptor assignment can also be plotted. It should have 4 columns with column names \code{flowcell, lane, adaptor, treatment}. \code{flowcell, lane, adaptor} should be integer values starting from \code{1}; character values are expected for \code{treatment}.
-#' @param selection If \code{x} is a \code{DEdesign} object, select which design to plot: \code{Design} based on input or \code{suggestedDesign}. Default is \code{Design}.
+#' @param selection If \code{x} is a \code{DEdesign} object, select which design to plot: "\code{Design}" based on input or "\code{suggestedDesign}". Default is "\code{Design}".
 #'
 #' @return a \code{ggplot2} object
 #'

@@ -29,10 +29,6 @@
 #' @import dplyr
 #' @importFrom blocksdesign design
 #'
-#'
-#'
-#'
-#'
 #' @export
 #'
 gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searches = NULL) {
@@ -195,5 +191,71 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
 }
 
 
+#' Extract design
+#'
+#' Extracts desgins from a \code{DEdesign} object
+#'
+#' @param x a \code{DEdesign} object (output from \code{gendesign}).
+#' @param selection choose which design to output: \code{Design} based on input or \code{suggestedDesign}. Default is \code{Design}.
+#'
+#' @return a data frame giving flowcell, lane and adaptor assignment for each experimental unit
+#'
+#'
+#' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell
+#'
+#'
+#' @examples
+#' des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+#' designDF(des,selection="Design")
+#' designDF(des,selection="suggestedDesign")
+#'
+#' @export
+designDF <- function(x, selection) UseMethod("designDF")
 
+#' @export
+designDF.DEdesign <- function(x, selection="Design") {
+  DEdesignobj=x
+  stopifnot(class(DEdesignobj) == "DEdesign")
+  if (! (selection %in% c("Design","suggestedDesign"))) {
+    stop("Please select which design to plot: Design based on input or suggestedDesign")
+  }
+
+  if (selection=="Design") {designtable=DEdesignobj$Design$design
+  } else {designtable=DEdesignobj$suggestedDesign$design}
+  designtable
+}
+
+#' Extract efficiency
+#'
+#' Extracts D-efficiency from a \code{DEdesign} object
+#'
+#' @param x a \code{DEdesign} object (output from \code{gendesign}).
+#' @param selection choose which design to output: "\code{Design}" based on input or "\code{suggestedDesign}". Default is "\code{Design}".
+#'
+#' @return a data frame giving D-efficiencies of flowcell (If there are more than one flowcell), lane and adaptor blocks
+#'
+#'
+#' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell
+#'
+#'
+#' @examples
+#' des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+#' efficiency(des,selection="Design")
+#' efficiency(des,selection="suggestedDesign")
+#'
+#' @export
+efficiency <- function(x, selection) UseMethod("efficiency")
+
+#' @export
+efficiency.DEdesign <- function(x, selection="Design") {
+  DEdesignobj=x
+  stopifnot(class(DEdesignobj) == "DEdesign")
+  if (! (selection %in% c("Design","suggestedDesign"))) {
+    stop("Please select which design to plot: Design based on input or suggestedDesign")
+  }
+
+  if (selection=="Design") {efficiencytable=DEdesignobj$Design$BlocksEfficiency
+  } else {efficiencytable=DEdesignobj$suggestedDesign$BlocksEfficiency}
+  efficiencytable
+}
 
