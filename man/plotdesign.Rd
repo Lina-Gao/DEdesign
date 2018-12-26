@@ -18,7 +18,8 @@ a \code{ggplot2} object
 Plot the RNA-seq experimental design in the format of Illumina 8-lane flow cell
 }
 \examples{
-des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+treatments <- data.frame(trt = letters[1:6], replicates = rep(3,6))
+des <- gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 plotdesign (des,selection="Design")
 plotdesign (des,selection="suggestedDesign")
 plotdesign (des$suggestedDesign$design)

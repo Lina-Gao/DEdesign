@@ -3,17 +3,17 @@
 #' Generates block design to assign samples to sequencing lanes and adapters for Illumina flow cell
 #'
 #'
-#' @param treatments a character vector for treatment groups. If the experiment consists of two or more factors, provide a character vector representing all possible combinations of levels across these factors.
-#' @param replicates an integer vector for number of replicates for each element of \code{treatments}. Length of \code{replicates} has to match length of \code{treatments}.
-#' @param nperlane An integer for number of samples per lane for sequencing. When \code{nperlane} is not provided, a number between 4-6 will be selected based on number of treatments to generate efficient design
+#' @param treatments a \code{data.frame} showing number of samples per treatment group. For single factor experiment, \code{treatments} should contain two columns with one column showing levels of the factor and the other column named \code{"replicates"} for number of samples in each level. For factorial experiments, there should be one column for each factor, and the \code{"replicates"} column gives number of samples in each combination of factor levels. Please see \code{treatments.example} for a template. For the purpose of plotting, please use short factor names and in factorial design using numbers for factor levels is recommended.
+#' @param nperlane An integer for number of samples per lane for sequencing. Default is 4. This is used to generate \code{Design} in results.
+#' @param search.surrounding An non-negative integer with default 0, which means to only find design for number of samples per lane defined by \code{nperlane}. For other values, designs using \code{min(3,(nperlane-search.surrounding))} to \code{(nperlane+search.surrounding)} samples per lane will be compared to give \code{suggestedDesign}. \code{suggestedDesign} is the design with minimal number of flowcells among all candidate designs that gives the highest lane block efficiency (when more than one designs meet these criteria, design with highest nperlane is selected).
 #' @param seed an integer initializing the random number generator. The default is \code{seed=1}. Designs can be rebuilt repeatedly using different seed to check that a near-optimum design has been found.
 #' @param searches the maximum number of local optima searched at each stage of a treatment and block design optimization. The default depends on the design size. For optimum results, try large number of searches.
 #'
 #' @return \code{gendesign} returns an object of class "\code{DEdesign}", which is a list containing the following components:
 #'
 #' @return \code{input} A list showing input parameters to the function
-#' @return \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
-#' @return \code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
+#' @return \code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter (and/or flowcell when applicable).
+#' @return \code{suggestedDesign} When \code{search.surrounding >0}, a list with two elements are returned here: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter (and/or flowcell when applicable). Designs using \code{min(3,(nperlane-search.surrounding))} to \code{(nperlane+search.surrounding)} samples per lane will be compared to give \code{suggestedDesign}. \code{suggestedDesign} is the design with minimal number of flowcells among all candidate designs that gives the highest lane block efficiency (when more than one designs meet these criteria, design with highest nperlane is selected).
 #'
 #'
 #' @keywords RNA-seq, statistical experimental design, block design, Illumina flow cell
@@ -22,172 +22,64 @@
 #' @exportClass DEdesign
 #'
 #' @examples
-#' gendesign(treatments=letters[1:4], replicates=rep(4,4), nperlane=NULL)
-#' gendesign(treatments=letters[1:4], replicates=c(2,4,4,2), nperlane=3)
-#' gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+#' gendesign(treatments= data.frame(trt = letters[1:4], replicates = rep(4,4)))
+#' treatments <- data.frame(expand.grid(A=factor(1:2), B=factor(1:5)),replicates = 2)
+#' gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 #'
 #' @import dplyr
+#' @importFrom purrr map
 #' @importFrom blocksdesign design
 #'
 #' @export
 #'
-gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searches = NULL) {
-    if (class(treatments) != "character") {
-        stop("treatments needs to be a character vector for treatment groups")
+gendesign <- function(treatments, nperlane = 4, search.surrounding = 0, seed = 1, searches = NULL) {
+  if (class(treatments) != "data.frame") {
+    stop("treatments needs to be a data.frame showing number of samples per treatment group")
+  }
+
+
+  if (!((class(nperlane) == "integer" & nperlane > 0) | (class(nperlane) == "numeric" &
+                                                         nperlane > 0 & ceiling(nperlane) == floor(nperlane)))) {
+    stop("nperlane needs to be a positive integer")
+  }
+
+  if (!((class(search.surrounding) == "integer" & search.surrounding >= 0) | (class(search.surrounding) == "numeric" &
+                                                                              search.surrounding >= 0 & ceiling(search.surrounding) == floor(search.surrounding)))) {
+    stop("search.surrounding needs to be a non-negative integer")
+  }
+
+  if (!("replicates" %in% names(treatments))) {
+    stop("input `treatments` data.frame has to contain a column named 'replicates' showing number of samples per treatment group")
+  } else {
+    if (!((class(treatments$replicates) == "integer" & all(treatments$replicates > 0)) | (class(treatments$replicates) == "numeric" &
+                                                                                          all(treatments$replicates > 0) &
+                                                                                          all(ceiling(treatments$replicates) == floor(treatments$replicates))))) {
+      stop("`replicates` column in input `treatments` data.frame needs to be positive integers")
     }
-
-    if (!((class(replicates) == "integer" & all(replicates > 0)) | (class(replicates) == "numeric" & all(replicates >
-        0) & all(ceiling(replicates) == floor(replicates))))) {
-        stop("replicates needs to be positive integers")
-    }
-
-    if (!is.null(nperlane)) {
-        if (!((class(nperlane) == "integer" & nperlane > 0) | (class(nperlane) == "numeric" &
-            nperlane > 0 & ceiling(nperlane) == floor(nperlane)))) {
-            stop("if nperlane is not NULL, it needs to be a positive integer")
-        }
-    }
-
-    if (length(treatments) != length(replicates)) {
-        stop("treatments and replicates need to be the same length")
-    }
+  }
 
 
-    out <- structure(list(input = list(treatments = treatments, nperlane = nperlane, replicates = replicates, seed = seed, searches = searches),
-                          Design = list(),
-                          suggestedDesign = list()),
-                     class = "DEdesign")
-
-    ntreatments <- length(treatments)
-
-    # suggested design, basically suggesting nperlane
-    if (ntreatments <= 6) {
-        suggested.nperlane <- switch(ntreatments, 4, 4, 3, 4, 5, 6)
-    } else {
-        # ntreatments>6
-        suggested.nperlane <- 4
-        if (ntreatments%%5 == 0)
-            suggested.nperlane <- 5
-        if (ntreatments%%3 == 0 & ntreatments%%4 != 0)
-            suggested.nperlane <- 6
-    }
-    # #don't need
-    # if ((sum(replicates)%%suggested.nperlane) != 0) {
-    #     # not filing a whole lane, add samples belong to ' ' to fill
-    #     replicates <- c(replicates, (sum(replicates)%%suggested.nperlane))
-    #     treatments <- c(treatments, " ")
-    # }
+  out <- structure(list(input = list(treatments = treatments, nperlane = nperlane, search.surrounding = search.surrounding, seed = seed, searches = searches),
+                        Design = list(),
+                        suggestedDesign = list()),
+                   class = "DEdesign")
 
 
-    suggested.numlane <- ceiling(sum(replicates)/suggested.nperlane)
-    trtforeachsample = as.factor(mapply(rep,treatments,replicates) %>% unlist)
-    lane = factor(1:suggested.numlane)
-    adapter = factor(1:suggested.nperlane)
-    blocks = expand.grid(lane,adapter)
-    names(blocks)=c("lane","adapter")
+  treatments = .reformat(treatments)
 
-    if (nrow(blocks)>sum(replicates)) {
-      ntoremove = nrow(blocks) - sum(replicates)
-      blocks=blocks[!((blocks$lane==suggested.numlane) & (blocks$adapter %in% ((suggested.nperlane-ntoremove+1):suggested.nperlane))), ]
-      # blocks=blocks %>% dplyr::filter_(!("lane"==suggested.numlane & "adapter" %in% ((suggested.nperlane-ntoremove+1):suggested.nperlane))) #not working
-    }
+  nperlane_torun = max(3, (nperlane-search.surrounding)):(nperlane+search.surrounding)
 
+  cachedRes = data.frame(nperlane_torun = nperlane_torun)
+  cachedRes$res_list = map(cachedRes$nperlane_torun, .f = ~.onedesign (nperlane=.,treatments = treatments, seed=seed, searches=searches))
 
-    if (suggested.numlane <=8) {
-      suggested.des=design(trtforeachsample,blocks,searches=searches,weighting=0, seed=seed)
+  out$Design = cachedRes$res_list[[which(cachedRes$nperlane_torun==nperlane)]]
 
-      out$suggestedDesign$design <- suggested.des$design
-      names(out$suggestedDesign$design)[names(out$suggestedDesign$design)=="TF"]="treatment"
-      out$suggestedDesign$design$flowcell = 1
-      out$suggestedDesign$design$lane = as.numeric(out$suggestedDesign$design$lane)
-      out$suggestedDesign$design$adapter = as.numeric(out$suggestedDesign$design$adapter)
-      out$suggestedDesign$design = out$suggestedDesign$design %>%
-        select_("flowcell","lane","adapter","treatment") %>%
-        arrange_("flowcell","lane","adapter","treatment")
+  if(search.surrounding > 0) {
+    # select nperlane that gives highest D-efficiency for lane (note lane is nested within flowcell, but it is not considered here, will improve in the future)
+    out$suggestedDesign = cachedRes$res_list[[which(cachedRes$nperlane_torun==.whichHighestEffi(cachedRes, target = "lane"))]]
+  }
 
-      out$suggestedDesign$BlocksEfficiency <- suggested.des$blocks_model[,c(1,3)]
-      names( out$suggestedDesign$BlocksEfficiency) <- c("Blocks","D-efficiency")
-      out$suggestedDesign$BlocksEfficiency$Blocks <- c("lane","adapter")
-    } else {
-      blocks$flowcell= as.factor(ifelse(as.numeric(blocks$lane) %% 8!=0,as.numeric(blocks$lane) %/%8 +1,as.numeric(blocks$lane) %/%8))
-      suggested.des=design(trtforeachsample,blocks,searches=searches,weighting=0, seed=seed)
-
-      out$suggestedDesign$design <- suggested.des$design
-      names(out$suggestedDesign$design)[names(out$suggestedDesign$design)=="TF"]="treatment"
-      out$suggestedDesign$design$lane=ifelse(as.numeric(out$suggestedDesign$design$lane) %% 8!=0,as.numeric(out$suggestedDesign$design$lane) %% 8,8)
-      out$suggestedDesign$design$adapter=as.numeric(out$suggestedDesign$design$adapter)
-      out$suggestedDesign$design$flowcell=paste0("flowcell",as.numeric(out$suggestedDesign$design$flowcell))
-      out$suggestedDesign$design = out$suggestedDesign$design %>%
-        select_("flowcell","lane","adapter","treatment") %>%
-        arrange_("flowcell","lane","adapter","treatment")
-
-      out$suggestedDesign$BlocksEfficiency <- suggested.des$blocks_model[,c(1,3)]
-      names( out$suggestedDesign$BlocksEfficiency) <- c("Blocks","D-efficiency")
-      out$suggestedDesign$BlocksEfficiency$Blocks <- c("flowcell","lane","adapter")
-
-    }
-
-    if (!is.null(nperlane)) {
-
-      # if ((sum(replicates)%%nperlane) != 0) {
-      #   # not filing a whole lane, add samples belong to ' ' to fill
-      #   replicates <- c(replicates, (sum(replicates)%%nperlane))
-      #   treatments <- c(treatments, " ")
-      # }
-
-      numlane <- ceiling(sum(replicates)/nperlane)
-      trtforeachsample = as.factor(mapply(rep,treatments,replicates) %>% unlist)
-      lane = factor(1:numlane)
-      adapter = factor(1:nperlane)
-      blocks = expand.grid(lane,adapter)
-      names(blocks)=c("lane","adapter")
-
-      if (nrow(blocks)>sum(replicates)) {
-        ntoremove = nrow(blocks) - sum(replicates)
-        blocks=blocks[!((blocks$lane==numlane) & (blocks$adapter %in% ((nperlane-ntoremove+1):nperlane))), ]
-        # blocks=blocks %>% dplyr::filter_(!("lane"==numlane & "adapter" %in% ((nperlane-ntoremove+1):nperlane)))
-      }
-
-
-      if (numlane <=8) {
-        des=design(trtforeachsample,blocks,searches=searches,weighting=0, seed=seed)
-
-        out$Design$design <- des$design
-        names(out$Design$design)[names(out$Design$design)=="TF"]="treatment"
-        out$Design$design$flowcell = 1
-        out$Design$design$lane = as.numeric(out$Design$design$lane)
-        out$Design$design$adapter = as.numeric(out$Design$design$adapter)
-        out$Design$design = out$Design$design %>%
-          select_("flowcell","lane","adapter","treatment") %>%
-          arrange_("flowcell","lane","adapter","treatment")
-
-        out$Design$BlocksEfficiency <- des$blocks_model[,c(1,3)]
-        names( out$Design$BlocksEfficiency) <- c("Blocks","D-efficiency")
-        out$Design$BlocksEfficiency$Blocks <- c("lane","adapter")
-      } else {
-        blocks$flowcell= as.factor(ifelse(as.numeric(blocks$lane) %% 8!=0,as.numeric(blocks$lane) %/%8 +1,as.numeric(blocks$lane) %/%8))
-        des=design(trtforeachsample,blocks,searches=searches,weighting=0, seed=seed)
-
-        out$Design$design <- des$design
-        names(out$Design$design)[names(out$Design$design)=="TF"]="treatment"
-        out$Design$design$lane=ifelse(as.numeric(out$Design$design$lane) %% 8!=0,as.numeric(out$Design$design$lane) %% 8,8)
-        out$Design$design$adapter=as.numeric(out$Design$design$adapter)
-        out$Design$design$flowcell=paste0("flowcell",as.numeric(out$Design$design$flowcell))
-        out$Design$design = out$Design$design %>%
-          select_("flowcell","lane","adapter","treatment") %>%
-          arrange_("flowcell","lane","adapter","treatment")
-
-        out$Design$BlocksEfficiency <- des$blocks_model[,c(1,3)]
-        names( out$Design$BlocksEfficiency) <- c("Blocks","D-efficiency")
-        out$Design$BlocksEfficiency$Blocks <- c("flowcell","lane","adapter")
-
-      }
-
-    } else {
-      # nperlane is null
-      out$Design <- out$suggestedDesign  #when nperlane is NULL,  design by input is the same as suggested design
-    }
-    out  #output
+  out  #output
 }
 
 
@@ -205,7 +97,8 @@ gendesign <- function(treatments, replicates, nperlane = NULL, seed = 1, searche
 #'
 #'
 #' @examples
-#' des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+#' treatments <- data.frame(trt = letters[1:6], replicates = rep(3,6))
+#' des <- gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 #' designDF(des,selection="Design")
 #' designDF(des,selection="suggestedDesign")
 #'
@@ -239,7 +132,8 @@ designDF.DEdesign <- function(x, selection="Design") {
 #'
 #'
 #' @examples
-#' des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+#' treatments <- data.frame(trt = letters[1:6], replicates = rep(3,6))
+#' des <- gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 #' efficiency(des,selection="Design")
 #' efficiency(des,selection="suggestedDesign")
 #'

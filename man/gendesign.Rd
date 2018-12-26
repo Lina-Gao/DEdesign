@@ -4,15 +4,15 @@
 \alias{gendesign}
 \title{Statistical design for RNA-seq experiments aimed at identifying differentially expressed genes}
 \usage{
-gendesign(treatments, replicates, nperlane = NULL, seed = 1,
+gendesign(treatments, nperlane = 4, search.surrounding = 0, seed = 1,
   searches = NULL)
 }
 \arguments{
-\item{treatments}{a character vector for treatment groups. If the experiment consists of two or more factors, provide a character vector representing all possible combinations of levels across these factors.}
+\item{treatments}{a \code{data.frame} showing number of samples per treatment group. For single factor experiment, \code{treatments} should contain two columns with one column showing levels of the factor and the other column named \code{"replicates"} for number of samples in each level. For factorial experiments, there should be one column for each factor, and the \code{"replicates"} column gives number of samples in each combination of factor levels. Please see \code{treatments.example} for a template. For the purpose of plotting, please use short factor names and in factorial design using numbers for factor levels is recommended.}
 
-\item{replicates}{an integer vector for number of replicates for each element of \code{treatments}. Length of \code{replicates} has to match length of \code{treatments}.}
+\item{nperlane}{An integer for number of samples per lane for sequencing. Default is 4. This is used to generate \code{Design} in results.}
 
-\item{nperlane}{An integer for number of samples per lane for sequencing. When \code{nperlane} is not provided, a number between 4-6 will be selected based on number of treatments to generate efficient design}
+\item{search.surrounding}{An non-negative integer with default 0, which means to only find design for number of samples per lane defined by \code{nperlane}. For other values, designs using \code{min(3,(nperlane-search.surrounding))} to \code{(nperlane+search.surrounding)} samples per lane will be compared to give \code{suggestedDesign}. \code{suggestedDesign} is the design with minimal number of flowcells among all candidate designs that gives the highest lane block efficiency (when more than one designs meet these criteria, design with highest nperlane is selected).}
 
 \item{seed}{an integer initializing the random number generator. The default is \code{seed=1}. Designs can be rebuilt repeatedly using different seed to check that a near-optimum design has been found.}
 
@@ -23,17 +23,17 @@ gendesign(treatments, replicates, nperlane = NULL, seed = 1,
 
 \code{input} A list showing input parameters to the function
 
-\code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
+\code{Design} A list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter (and/or flowcell when applicable).
 
-\code{suggestedDesign} When possible, \code{suggestedDesign} uses different number of samples per lane from the input to give more efficient block design; otherwise it is the same as \code{Design}.  \code{suggestedDesign} is a list with two elements: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter.
+\code{suggestedDesign} When \code{search.surrounding >0}, a list with two elements are returned here: \code{design} and \code{BlocksEfficiency}. \code{design} is a data frame giving flowcell, lane and adapter assignment for treatment groups. \code{BlocksEfficiency} is a data frame giving block efficiencies (D-Efficiencies) for lane and adapter (and/or flowcell when applicable). Designs using \code{min(3,(nperlane-search.surrounding))} to \code{(nperlane+search.surrounding)} samples per lane will be compared to give \code{suggestedDesign}. \code{suggestedDesign} is the design with minimal number of flowcells among all candidate designs that gives the highest lane block efficiency (when more than one designs meet these criteria, design with highest nperlane is selected).
 }
 \description{
 Generates block design to assign samples to sequencing lanes and adapters for Illumina flow cell
 }
 \examples{
-gendesign(treatments=letters[1:4], replicates=rep(4,4), nperlane=NULL)
-gendesign(treatments=letters[1:4], replicates=c(2,4,4,2), nperlane=3)
-gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+gendesign(treatments= data.frame(trt = letters[1:4], replicates = rep(4,4)))
+treatments <- data.frame(expand.grid(A=factor(1:2), B=factor(1:5)),replicates = 2)
+gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 
 }
 \keyword{Illumina}

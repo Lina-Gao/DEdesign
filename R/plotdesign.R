@@ -12,7 +12,8 @@
 #'
 #'
 #' @examples
-#' des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+#' treatments <- data.frame(trt = letters[1:6], replicates = rep(3,6))
+#' des <- gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 #' plotdesign (des,selection="Design")
 #' plotdesign (des,selection="suggestedDesign")
 #' plotdesign (des$suggestedDesign$design)
@@ -38,6 +39,14 @@ plotdesign.DEdesign <- function(x, selection="Design") {
 
   if (selection=="Design") {designtable=DEdesignobj$Design$design
   } else {designtable=DEdesignobj$suggestedDesign$design}
+
+  treatmentcolumns = names(designtable)[!names(designtable) %in% c("flowcell","lane","adapter")]
+  comblevels = character()
+  for (i in seq(1:length(treatmentcolumns))){
+    comblevels = paste0(comblevels, treatmentcolumns[i],designtable[,treatmentcolumns[i], drop = TRUE])
+  }
+  designtable$treatment = comblevels
+  designtable = designtable[,c("flowcell","lane","adapter","treatment")]
 
   nadapter <- max(designtable$adapter)
   lanelabel <- data.frame(lane = 1:8, adapter = nadapter + 1.2, label = paste0("lane", 1:8))
@@ -98,6 +107,15 @@ plotdesign.data.frame <- function(x, selection=NULL) {
   if (!("flowcell" %in% inputs)) {
     stop("need flowcell assignment in design")
   }
+
+  treatmentcolumns = names(designtable)[!names(designtable) %in% c("flowcell","lane","adapter")]
+  comblevels = character()
+  for (i in seq(1:length(treatmentcolumns))){
+    comblevels = paste0(comblevels, treatmentcolumns[i],designtable[,treatmentcolumns[i], drop = TRUE])
+  }
+  designtable$treatment = comblevels
+  designtable = designtable[,c("flowcell","lane","adapter","treatment")]
+
 
   nadapter <- max(designtable$adapter)
   lanelabel <- data.frame(lane = 1:8, adapter = nadapter + 1.2, label = paste0("lane", 1:8))

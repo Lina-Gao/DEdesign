@@ -18,7 +18,8 @@ a data frame giving flowcell, lane and adapter assignment for each experimental 
 Extracts desgins from a \code{DEdesign} object
 }
 \examples{
-des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+treatments <- data.frame(trt = letters[1:6], replicates = rep(3,6))
+des <- gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 designDF(des,selection="Design")
 designDF(des,selection="suggestedDesign")
 

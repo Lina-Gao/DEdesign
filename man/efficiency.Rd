@@ -18,7 +18,8 @@ a data frame giving D-efficiencies of flowcell (If there are more than one flowc
 Extracts D-efficiency from a \code{DEdesign} object
 }
 \examples{
-des <- gendesign(treatments=letters[1:6], replicates=rep(3,6), nperlane=4)
+treatments <- data.frame(trt = letters[1:6], replicates = rep(3,6))
+des <- gendesign(treatments=treatments, nperlane=4, search.surrounding = 2)
 efficiency(des,selection="Design")
 efficiency(des,selection="suggestedDesign")
 
