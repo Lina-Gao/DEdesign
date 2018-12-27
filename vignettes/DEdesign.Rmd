@@ -1,0 +1,144 @@
+---
+title: "Using `DEdesgin` package to assign RNA-seq samples to sequencing blocks"
+author: "Lina Gao"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Using `DEdesgin` package to assign RNA-seq samples to sequencing blocks}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE,echo=TRUE,error = FALSE, cache = FALSE,
+                      fig.width = 7)
+
+library(knitr)
+library(DEdesign)
+```
+
+# Introduction
+
+RNA-Seq differential expression (DE) studies contain multiple steps, which can be broken up into two stages: treatment stage and measurement stage. The treatment stage is to apply treatments to experimental units (or identify factors of interest in observational studies). Experimental units receiving the same treatments are called biological replicates, and the variation between biological replicates is biological variation. Then in measurement stage, RNA-seq acquires a snapshot of the transcriptome of a given biological sample by deep sequencing. Briefly, a population of RNA species that are of interest are extracted from the biological samples, fragmented, reverse transcribed, and processed to obtain a large number of sequencing short reads. When an experimental unit is measured more than once starting at any of these steps, the resulting replicate samples are called technical replicates, and the variation between technical replicates is technical variation. In differential expression studies, technical variation is usually not of interest, therefore only biological replicates are used.
+
+Because the measurement stage of RNA-Seq involves many steps which can and usually do bring technical variations to the final read count, when these technical factors are confounded with experimental factors, differential expression results can be biased and misleading. Statistical methods are available to adjust for confounding effects from technical variations, however, in most of cases with small number of samples in RNA-Seq it is not feasible to adjust for all technical factors; moreover, it will be far more efficient to control such unwanted confounding effects through sensible statistical experimental design. 
+
+In differential expression studies, all of the technical factors are nuisance factors, therefore we can design the measurement stage of RNA-Seq in such a way that these technical factors are confounded with each other as much as possible so that we can adjust for them using one or few factors in statistical model. For each of the technical steps except the final sequencing step, the number of samples that can be processed in one batch depends on the protocol used and the operator. In the sequencing step, RNA-Seq has one intrinsic limitation, which is the number of samples that can be sequenced under the same technical factors. This is determined by the sequencing platform.
+
+The `DEdesign` package will perform statistical design for DE RNA-seq experiments to assign samples to sequencing blocks. The current version supports the popular sequencing platform Illumina HiSeq 2500. In HiSeq 2500 single flow cell mode, each flow cell contain 8 lanes. The `DEdesign` package also can be used to plot the design in the format of 8-lane flow cell. 
+
+Other platforms will be included in future developments of the `DEdesign` package. 
+
+# Design principles and key points
+
+* The `DEdesign` package is specifically designed to perform statistical design for RNA-seq DE experiments to assign samples to sequencing blocks. The `gendesign` function is the main function of the package. It calls `design` function from `blocksdesign` package (by Dr. Rodney Edmondson), which can construct nested and crossed block designs for factorial treatments.
+* We assume the treatment stage has been carefully designed and performed following the fundamental experimental design principles: replication, randomization, and blocking. 
+* We also assume that other aspects of RNA-seq experimental design have been carefully considered, such as RNA extraction protocol, library type, sequencing depth, and number of replicates, etc. These are important aspects and should be planned adequately with best up-to-date knowledge according to established guidelines. 
+* **The `DEdesign` package focuses on assigning samples to sequencing blocks. Other nuisance technical factors (for example, RNA extraction, library preparation, etc) should be confounded sequencing factors and with each other as much as possible. Ideally all of these technical factors should be recorded as much as possible in case they do need to be adjsuted for in statistical modeling to identify DE genes between biological treatments. **
+* For the currently supported Illumina HiSeq 2500 platform, we consider sequencing lane (and flowcell when applicable) and adapter as blocking factors. Some sequecning cores do not allow assignment of adapters by users, in such cases, adapter assigment in the `DEdesign` results can be ignored without affecting the blocking efficiency of lane (and flowcell). This is because the `blcoksdesign::design` function called by `DEdesign::gendesign` uses sequenctial optimization approach: adapter blocking is optimized after lane blocking (which is optimized after flowcell when applicable).
+* In practice, `gendesign` function can be run repeatedly using different random seed (by setting `seed`) to check that a near-optimum design has been found. Also, for optimal results, try large number of `searches` (which may take a long time to run if the treatment model is complicated).
+
+# Examples
+
+## Install `DEdesign` package from github
+
+```
+devtools::install_github("Lina-Gao/DEdesign")
+library(DEdesign)
+```
+
+
+## One treatment factor with 3 levels, 4 biological replicates for each level.
+
+### Using all default settings
+
+Default settings will give design with 4 samples per lane for sequencing
+```{r}
+treatments = data.frame(trt = c("A", "B", "C"), replicates = rep(4,3))
+des = gendesign(treatments = treatments)
+```
+
+To retrieve design table that contains flowcell, lane and adapter assignment for each experimental unit
+```{r}
+designDF(des) %>% kable(caption = "flowcell, lane and adapter assignment for each experimental unit")
+```
+
+For block efficiencies:
+```{r}
+efficiency(des) %>% kable(caption = "lane and adapter block efficiency")
+```
+
+Plot the design:
+```{r}
+plotdesign(des)
+```
+
+
+### Explore whether 3 or 5 samples per lane will give higher lane efficiency
+
+```{r}
+des = gendesign(treatments = treatments, nperlane = 4, search.surrounding = 1)
+plotdesign(des)
+plotdesign(des, selection = "suggestedDesign")
+```
+
+For higher lane efficiency, 3 samples per lane is recommended over 4 samples per lane.
+```{r}
+efficiency(des) %>% kable(caption = "block efficiency using 4 samples per lane")
+efficiency(des, selection = "suggestedDesign") %>% kable(caption = "block efficiency using 3 samples per lane")
+```
+
+
+##  Unbalanced one factor design
+
+```{r}
+treatments = data.frame(trt = factor(1:5), replicates = c(3,4,4,3,3))
+des = gendesign(treatments = treatments,
+                nperlane = 4, search.surrounding = 2)
+```
+
+```{r}
+plotdesign(des)
+plotdesign(des, selection = "suggestedDesign")
+efficiency(des) %>% kable(caption = "block efficiency using 4 samples per lane")
+efficiency(des, selection = "suggestedDesign") %>% kable(caption = "block efficiency from suggestedDesign")
+```
+
+Among designs usign 3, 4, 5, 6 samples per lane, 6 samples per lane gives the highest lane efficiency, therefore is recommended as `suggestedDesign`.
+
+## 2X2 factorial treatment model, 4 biological replicates per combination level.
+
+```{r}
+treatments = data.frame(expand.grid(A=factor(1:2), B=factor(1:2)), 
+                        replicates = rep(4,4))
+des = gendesign(treatments = treatments,
+                nperlane = 4, search.surrounding = 1)
+```
+
+Among designs usign 3, 4 or 5 samples per lane, 4 samples per lane gives the highest lane efficiency (In fact, when considering the 4 combination levels flatterned from the 2X2 factorial, 4 samples per lane gives Latin Square Design). Therefore `suggestedDesign` is the same as `Design`.
+
+```{r}
+plotdesign(des)
+plotdesign(des, selection = "suggestedDesign")
+```
+
+## One treatment factor with 9 levels, 4 biological replicates for each level
+
+```{r, fig.height=8}
+treatments = data.frame(trt = LETTERS[1:9], replicates = rep(4,9))
+des = gendesign(treatments = treatments,
+                nperlane = 4, search.surrounding = 2)
+plotdesign(des)
+plotdesign(des, selection = "suggestedDesign")
+efficiency(des) %>% kable(caption = "block efficiency using 4 samples per lane")
+efficiency(des, selection = "suggestedDesign") %>% kable(caption = "block efficiency from suggestedDesign")
+```
+
+In this example, `Design` with 4 samples per lane has higher lane efficiency than `suggestedDesign`; however, rememeber because of sequenctial optimization approach, in `Design`, lane efficiency is actually conditional efficiency given the flowcell assignment and efficiency. In practice, flowcell variation is usually much larger than lane (nested within flowcell) variation, thus when comparing designs with different number of flowcells, `suggestedDesign` is the design with minimal number of flowcells among all candidate designs that gives the highest lane block efficiency. Also, not shown in this example, when more than one designs meet these criteria, design with highest `nperlane` is selected for less expenses for sequencing (assuming candidate designs are not dramatically different in number of samples per lane so that sequecing depth is not affected by much).  
+
+
